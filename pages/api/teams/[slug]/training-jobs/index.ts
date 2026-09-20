@@ -14,7 +14,10 @@ const createTrainingJobSchema = z.object({
   parameters: z.record(z.unknown()).default({}),
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   try {
     await throwIfNoTeamAccess(req, res);
     const user = await getCurrentUserWithTeam(req, res);
@@ -29,20 +32,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');
-      return res.status(405).json({ error: { message: `Method ${req.method} Not Allowed` } });
+      return res
+        .status(405)
+        .json({ error: { message: `Method ${req.method} Not Allowed` } });
     }
     throwIfNotAllowed(user, 'team', 'create');
     const input = createTrainingJobSchema.safeParse(req.body);
-    if (!input.success) throw new ApiError(422, input.error.errors[0]?.message ?? 'Invalid training job');
+    if (!input.success)
+      throw new ApiError(
+        422,
+        input.error.errors[0]?.message ?? 'Invalid training job'
+      );
     const body = input.data;
-    const project = await prisma.project.findFirst({ where: { id: body.projectId, teamId: user.team.id }, select: { id: true } });
+    const project = await prisma.project.findFirst({
+      where: { id: body.projectId, teamId: user.team.id },
+      select: { id: true },
+    });
     if (!project) throw new ApiError(404, 'Project not found');
     if (body.modelVersionId) {
-      const version = await prisma.modelVersion.findFirst({ where: { id: body.modelVersionId, model: { projectId: project.id } }, select: { id: true } });
+      const version = await prisma.modelVersion.findFirst({
+        where: { id: body.modelVersionId, model: { projectId: project.id } },
+        select: { id: true },
+      });
       if (!version) throw new ApiError(404, 'Model version not found');
     }
     if (body.datasetVersionId) {
-      const version = await prisma.datasetVersion.findFirst({ where: { id: body.datasetVersionId, dataset: { projectId: project.id } }, select: { id: true } });
+      const version = await prisma.datasetVersion.findFirst({
+        where: {
+          id: body.datasetVersionId,
+          dataset: { projectId: project.id },
+        },
+        select: { id: true },
+      });
       if (!version) throw new ApiError(404, 'Dataset version not found');
     }
     const job = await prisma.trainingJob.create({
@@ -57,6 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     return res.status(201).json({ data: job });
   } catch (error: any) {
-    return res.status(error.status || 500).json({ error: { message: error.message || 'Something went wrong' } });
+    return res
+      .status(error.status || 500)
+      .json({ error: { message: error.message || 'Something went wrong' } });
   }
 }
