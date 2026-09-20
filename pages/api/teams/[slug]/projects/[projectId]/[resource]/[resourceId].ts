@@ -55,7 +55,7 @@ export default async function handler(
         if (!workspace)
           throw new ApiError(422, 'Workspace does not belong to this project.');
       }
-      await updateAiResource(resource, projectId, resourceId, input as any);
+      await updateAiResource(resource, projectId, resourceId, input);
       return res
         .status(200)
         .json({ data: await getAiResource(resource, projectId, resourceId) });

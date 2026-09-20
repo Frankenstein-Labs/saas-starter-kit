@@ -1,6 +1,7 @@
 import {
   createAiResourceSchema,
   listAiResourcesSchema,
+  pickAiResourceUpdateData,
   updateAiResourceSchema,
 } from '@/lib/aiResourceSchemas';
 
@@ -33,5 +34,34 @@ describe('AI resource schemas', () => {
     expect(
       updateAiResourceSchema.safeParse({ content: () => 'run code' }).success
     ).toBe(false);
+  });
+
+  it('forwards only the update fields the target model owns', () => {
+    expect(
+      pickAiResourceUpdateData('workspaces', {
+        name: 'Renamed',
+        framework: 'pytorch',
+        content: { cells: [] },
+        license: 'MIT',
+      })
+    ).toEqual({ name: 'Renamed' });
+
+    expect(
+      pickAiResourceUpdateData('notebooks', {
+        name: 'Notebook',
+        workspaceId: null,
+        content: { cells: [] },
+        framework: 'pytorch',
+      })
+    ).toEqual({ name: 'Notebook', workspaceId: null, content: { cells: [] } });
+
+    expect(
+      pickAiResourceUpdateData('models', { framework: 'torch', license: 'MIT' })
+    ).toEqual({ framework: 'torch', license: 'MIT' });
+  });
+
+  it('never emits undefined fields for an empty update', () => {
+    const data = pickAiResourceUpdateData('datasets', {});
+    expect(Object.keys(data)).toEqual([]);
   });
 });
