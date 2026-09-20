@@ -13,6 +13,11 @@ const createProjectSchema = z.object({
   description: z.string().trim().max(500).optional(),
 });
 
+const listProjectsSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -22,8 +27,23 @@ export default async function handler(
 
     if (req.method === 'GET') {
       throwIfNotAllowed(teamMember, 'ai_project', 'read');
-      const projects = await getProjects(teamMember.team.id);
-      return res.status(200).json({ data: projects });
+      const { page, pageSize } = validateWithSchema(
+        listProjectsSchema,
+        req.query
+      );
+      const { data, total } = await getProjects(teamMember.team.id, {
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+      return res.status(200).json({
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      });
     }
 
     if (req.method === 'POST') {

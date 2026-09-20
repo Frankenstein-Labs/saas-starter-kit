@@ -19,6 +19,7 @@ export type Resource =
   | 'ai_dataset'
   | 'ai_training'
   | 'ai_deployment'
+  | 'ai_compute'
   | 'ai_integration';
 
 type RolePermissions = {
@@ -44,6 +45,7 @@ const allAiResources: Permission[] = [
   { resource: 'ai_dataset', actions: '*' },
   { resource: 'ai_training', actions: '*' },
   { resource: 'ai_deployment', actions: '*' },
+  { resource: 'ai_compute', actions: '*' },
   { resource: 'ai_integration', actions: '*' },
 ];
 
@@ -80,5 +82,6 @@ export const permissions: RolePermissions = {
     { resource: 'ai_dataset', actions: ['read', 'create'] },
     { resource: 'ai_training', actions: ['read', 'create'] },
     { resource: 'ai_deployment', actions: ['read'] },
+    { resource: 'ai_compute', actions: ['read'] },
   ],
 };

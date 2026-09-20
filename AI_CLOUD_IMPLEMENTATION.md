@@ -2,14 +2,14 @@
 
 ## 1. Informations de livraison
 
-| Élément | Valeur |
-|---|---|
-| Dépôt | `Frankenstein-Labs/saas-starter-kit` |
-| Branche | `feat/ai-cloud-foundation` |
-| Commit fonctionnel | `11ecc02 feat: add ai cloud project foundation` |
-| Commit de documentation | À créer après validation de ce fichier |
-| Portée | Fondation AI Cloud et première tranche Projects |
-| Date d’analyse | 20 septembre 2026 |
+| Élément                 | Valeur                                          |
+| ----------------------- | ----------------------------------------------- |
+| Dépôt                   | `Frankenstein-Labs/saas-starter-kit`            |
+| Branche                 | `feat/ai-cloud-foundation`                      |
+| Commit fonctionnel      | `11ecc02 feat: add ai cloud project foundation` |
+| Commit de documentation | À créer après validation de ce fichier          |
+| Portée                  | Fondation AI Cloud et première tranche Projects |
+| Date d’analyse          | 20 septembre 2026                               |
 
 Cette livraison travaille directement dans le dépôt SaaS existant. Aucun deuxième projet n’a été créé et les fonctions SaaS existantes n’ont pas été supprimées.
 
@@ -87,13 +87,13 @@ Les recherches incluent des compteurs pour workspaces, notebooks, datasets, mode
 
 Les routes ajoutées sont :
 
-| Méthode | Route | Fonction |
-|---|---|---|
-| `GET` | `/api/teams/[slug]/projects` | Lister les projets de l’équipe |
-| `POST` | `/api/teams/[slug]/projects` | Créer un projet |
-| `GET` | `/api/teams/[slug]/projects/[projectId]` | Lire un projet |
-| `PATCH` | `/api/teams/[slug]/projects/[projectId]` | Modifier un projet |
-| `DELETE` | `/api/teams/[slug]/projects/[projectId]` | Archiver un projet |
+| Méthode  | Route                                    | Fonction                       |
+| -------- | ---------------------------------------- | ------------------------------ |
+| `GET`    | `/api/teams/[slug]/projects`             | Lister les projets de l’équipe |
+| `POST`   | `/api/teams/[slug]/projects`             | Créer un projet                |
+| `GET`    | `/api/teams/[slug]/projects/[projectId]` | Lire un projet                 |
+| `PATCH`  | `/api/teams/[slug]/projects/[projectId]` | Modifier un projet             |
+| `DELETE` | `/api/teams/[slug]/projects/[projectId]` | Archiver un projet             |
 
 Les endpoints vérifient la session, l’accès à l’équipe, le rôle RBAC, l’UUID du projet et les champs entrants. Les champs de création sont limités à un nom de 80 caractères, un slug optionnel et une description de 500 caractères.
 
@@ -113,19 +113,19 @@ La navigation existante conserve `All Products` et `Settings`, avec l’ajout du
 
 ## 4. Fichiers modifiés et ajoutés
 
-| Fichier | Type de changement |
-|---|---|
-| `prisma/schema.prisma` | Ajout du schéma AI Cloud et des relations multi-tenant |
-| `lib/permissions.ts` | Extension RBAC aux ressources IA |
-| `models/project.ts` | Nouvelle couche d’accès aux projets |
-| `pages/api/teams/[slug]/projects/index.ts` | API de liste et création |
-| `pages/api/teams/[slug]/projects/[projectId].ts` | API de lecture, modification et archivage |
-| `pages/teams/[slug]/projects.tsx` | Page UI Projects |
-| `components/shared/shell/TeamNavigation.tsx` | Lien AI Projects |
-| `locales/en/common.json` | Libellés AI Cloud |
-| `PLAN_MIGRATION_AI_CLOUD.md` | Plan de migration global |
-| `EXPLICATION_COMPLETE_FR.md` | Documentation du starter kit en français |
-| `AI_CLOUD_IMPLEMENTATION.md` | Présent rapport |
+| Fichier                                          | Type de changement                                     |
+| ------------------------------------------------ | ------------------------------------------------------ |
+| `prisma/schema.prisma`                           | Ajout du schéma AI Cloud et des relations multi-tenant |
+| `lib/permissions.ts`                             | Extension RBAC aux ressources IA                       |
+| `models/project.ts`                              | Nouvelle couche d’accès aux projets                    |
+| `pages/api/teams/[slug]/projects/index.ts`       | API de liste et création                               |
+| `pages/api/teams/[slug]/projects/[projectId].ts` | API de lecture, modification et archivage              |
+| `pages/teams/[slug]/projects.tsx`                | Page UI Projects                                       |
+| `components/shared/shell/TeamNavigation.tsx`     | Lien AI Projects                                       |
+| `locales/en/common.json`                         | Libellés AI Cloud                                      |
+| `PLAN_MIGRATION_AI_CLOUD.md`                     | Plan de migration global                               |
+| `EXPLICATION_COMPLETE_FR.md`                     | Documentation du starter kit en français               |
+| `AI_CLOUD_IMPLEMENTATION.md`                     | Présent rapport                                        |
 
 ## 5. Vérifications effectuées
 
@@ -211,22 +211,32 @@ La page à vérifier est :
 /teams/<team-slug>/projects
 ```
 
-## 9. Suite recommandée après revue
+## 9. Tranche supplémentaire implémentée
+
+La branche `ai-cloud-platform-migration` contient désormais une deuxième tranche vérifiée :
+
+- API tenant-scoped pour `workspaces`, `notebooks`, `models` et `datasets` sous un projet ;
+- validation Zod des noms, métadonnées, contenu JSON et pagination ;
+- contrôle serveur du rattachement projet-équipe, y compris pour les notebooks associés à un workspace ;
+- interface de détail du projet avec création de ressources et état explicite `No compute available` ;
+- API `compute-providers` qui expose uniquement les métadonnées non sensibles et conserve les providers à l’état `NOT_CONFIGURED` ;
+- tests unitaires des schémas et des limites d’entrée.
+
+Cette tranche ne lance toujours aucun notebook, entraînement, déploiement ou résultat d’inférence. Aucun champ de secret de provider n’est accepté ou renvoyé par l’API ajoutée.
+
+## 10. Suite recommandée après revue
 
 Après validation de cette tranche, l’ordre de développement recommandé est :
 
-1. compléter Projects avec Workspaces et ressources de fichiers ;
-2. ajouter Models, ModelVersion, Datasets et DatasetVersion ;
-3. ajouter les adaptateurs GitHub et Hugging Face avec stockage sécurisé des tokens ;
-4. créer l’abstraction `ComputeProvider` ;
-5. ajouter la file et les interfaces de workers sans simuler leur disponibilité ;
-6. ajouter Training Jobs et métriques ;
-7. ajouter Deployments, Endpoints et `InferenceProvider` ;
-8. ajouter API keys scoped aux projets et deployments ;
-9. ajouter quotas, usage et billing configurable ;
-10. intégrer le Security Scanner défensif dans un service séparé ;
-11. ajouter les tests d’isolation multi-tenant et de transitions d’état.
+1. ajouter les adaptateurs GitHub et Hugging Face avec stockage sécurisé des tokens ;
+2. ajouter la file et les interfaces de workers sans simuler leur disponibilité ;
+3. ajouter Training Jobs et métriques ;
+4. ajouter Deployments, Endpoints et `InferenceProvider` ;
+5. ajouter API keys scoped aux projets et deployments ;
+6. ajouter quotas, usage et billing configurable ;
+7. intégrer le Security Scanner défensif dans un service séparé ;
+8. ajouter les tests d’isolation multi-tenant et de transitions d’état.
 
-## 10. Résumé pour le reviewer
+## 11. Résumé pour le reviewer
 
 Le commit `11ecc02` livre une fondation AI Cloud réelle et vérifiable dans le SaaS existant. La valeur principale est l’ajout d’un modèle de domaine extensible, tenant-scoped et compatible avec les futures abstractions de compute et d’inférence, accompagné d’un premier parcours complet de création et consultation de projets. La livraison ne masque pas les dépendances absentes : aucun compute ou backend IA inexistant n’est présenté comme disponible.

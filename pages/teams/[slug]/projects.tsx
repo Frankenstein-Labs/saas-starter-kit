@@ -7,6 +7,7 @@ import type { NextPageWithLayout } from 'types';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import fetcher from '@/lib/fetcher';
+import Link from 'next/link';
 
 type Project = {
   id: string;
@@ -148,9 +149,12 @@ const Projects: NextPageWithLayout = () => {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-semibold text-gray-900 dark:text-white">
+                <Link
+                  className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                  href={`/teams/${slug}/projects/${project.id}`}
+                >
                   {project.name}
-                </h2>
+                </Link>
                 <p className="text-xs text-gray-500">/{project.slug}</p>
               </div>
               <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">

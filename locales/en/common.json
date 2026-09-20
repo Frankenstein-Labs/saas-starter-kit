@@ -264,5 +264,15 @@
   "models-count": "models",
   "datasets-count": "datasets",
   "notebooks-count": "notebooks",
-  "ai-project-created": "AI project created."
+  "ai-project-created": "AI project created.",
+  "back-to-ai-projects": "Back to AI Projects",
+  "project-resources": "Project resources",
+  "project-resources-description": "Manage metadata and files without claiming compute that is not configured.",
+  "notebook-execution": "Notebook execution",
+  "resource-type": "Resource type",
+  "resource-name-placeholder": "My dataset or notebook",
+  "create-resource": "Create resource",
+  "ai-resource-created": "AI resource created.",
+  "no-resources-yet": "No resources yet.",
+  "configured": "Configured"
 }

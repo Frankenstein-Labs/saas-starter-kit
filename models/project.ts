@@ -1,23 +1,33 @@
 import type { Prisma, ProjectStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
-export const getProjects = async (teamId: string) => {
-  return prisma.project.findMany({
-    where: { teamId },
-    orderBy: { updatedAt: 'desc' },
-    include: {
-      _count: {
-        select: {
-          workspaces: true,
-          notebooks: true,
-          datasets: true,
-          models: true,
-          trainingJobs: true,
-          deployments: true,
+export const getProjects = async (
+  teamId: string,
+  options: { skip: number; take: number }
+) => {
+  const [data, total] = await prisma.$transaction([
+    prisma.project.findMany({
+      where: { teamId },
+      skip: options.skip,
+      take: options.take,
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        _count: {
+          select: {
+            workspaces: true,
+            notebooks: true,
+            datasets: true,
+            models: true,
+            trainingJobs: true,
+            deployments: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.project.count({ where: { teamId } }),
+  ]);
+
+  return { data, total };
 };
 
 export const getProject = async (id: string, teamId: string) => {

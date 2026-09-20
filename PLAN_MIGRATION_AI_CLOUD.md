@@ -147,7 +147,6 @@ Ajouter des tests pour projets, notebooks, permissions, modèles, datasets, jobs
 - Les fonctions Stripe restent compatibles avec les abonnements existants.
 - Les tests ne dépendent d’aucune GPU réelle.
 
-
 ## Compléments issus de la deuxième spécification
 
 ### ComputeProvider
