@@ -63,25 +63,32 @@ model User {
   invalid_login_attempts Int       @default(0)
   lockedAt               DateTime?
 
-  teamMembers TeamMember[]
-  accounts    Account[]
-  sessions    Session[]
-  invitations Invitation[]
+  teamMembers   TeamMember[]
+  accounts      Account[]
+  sessions      Session[]
+  invitations   Invitation[]
+  ownedProjects Project[]     @relation("ProjectOwner")
+  usageRecords  UsageRecord[]
 }
 
 model Team {
-  id              String       @id @default(uuid())
-  name            String
-  slug            String       @unique
-  domain          String?      @unique
-  defaultRole     Role         @default(MEMBER)
-  billingId       String?
-  billingProvider String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @default(now())
-  members         TeamMember[]
-  invitations     Invitation[]
-  apiKeys         ApiKey[]
+  id               String            @id @default(uuid())
+  name             String
+  slug             String            @unique
+  domain           String?           @unique
+  defaultRole      Role              @default(MEMBER)
+  billingId        String?
+  billingProvider  String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now())
+  members          TeamMember[]
+  invitations      Invitation[]
+  apiKeys          ApiKey[]
+  projects         Project[]
+  computeProviders ComputeProvider[]
+  usageRecords     UsageRecord[]
+  secrets          Secret[]
+  integrations     Integration[]
 
   @@index([billingId])
 }
@@ -217,4 +224,440 @@ model jackson_ttl {
 
   @@index([expiresAt], map: "_jackson_ttl_expires_at")
   @@ignore
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum WorkspaceStatus {
+  AVAILABLE
+  STOPPED
+  UNAVAILABLE
+}
+
+enum NotebookStatus {
+  DRAFT
+  READY
+  RUNNING
+  UNAVAILABLE
+}
+
+enum ModelSource {
+  LOCAL
+  GITHUB
+  HUGGINGFACE
+  TRAINED
+  IMPORTED
+}
+
+enum DatasetSource {
+  LOCAL
+  GITHUB
+  HUGGINGFACE
+  IMPORTED
+}
+
+enum TrainingJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ComputeProviderType {
+  PLATFORM
+  USER
+  EXTERNAL
+}
+
+enum ProviderStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  UNAVAILABLE
+  NOT_CONFIGURED
+}
+
+enum DeploymentMode {
+  PLATFORM
+  USER
+  EXTERNAL
+}
+
+enum DeploymentStatus {
+  PENDING
+  RUNNING
+  STOPPED
+  FAILED
+  UNAVAILABLE
+}
+
+enum IntegrationProvider {
+  GITHUB
+  HUGGINGFACE
+  GOOGLE
+  COMPUTE
+  STORAGE
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  UNAVAILABLE
+  NOT_CONFIGURED
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  teamId      String
+  ownerId     String
+  name        String
+  slug        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  owner        User          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  workspaces   Workspace[]
+  notebooks    Notebook[]
+  datasets     Dataset[]
+  models       Model[]
+  experiments  Experiment[]
+  trainingJobs TrainingJob[]
+  deployments  Deployment[]
+  artifacts    Artifact[]
+  usageRecords UsageRecord[]
+  secrets      Secret[]
+  integrations Integration[]
+
+  @@unique([teamId, slug])
+  @@index([teamId])
+  @@index([ownerId])
+}
+
+model Workspace {
+  id          String          @id @default(uuid())
+  projectId   String
+  name        String
+  description String?
+  status      WorkspaceStatus @default(UNAVAILABLE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  notebooks Notebook[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model Notebook {
+  id          String         @id @default(uuid())
+  projectId   String
+  workspaceId String?
+  name        String
+  content     Json
+  status      NotebookStatus @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([workspaceId])
+}
+
+model Dataset {
+  id          String        @id @default(uuid())
+  projectId   String
+  name        String
+  description String?
+  source      DatasetSource @default(LOCAL)
+  license     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions    DatasetVersion[]
+  experiments Experiment[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model DatasetVersion {
+  id        String   @id @default(uuid())
+  datasetId String
+  version   String
+  format    String?
+  sizeBytes BigInt?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  dataset      Dataset       @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  trainingJobs TrainingJob[]
+
+  @@unique([datasetId, version])
+  @@index([datasetId])
+}
+
+model Model {
+  id          String      @id @default(uuid())
+  projectId   String
+  name        String
+  description String?
+  framework   String?
+  format      String?
+  source      ModelSource @default(LOCAL)
+  license     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions    ModelVersion[]
+  deployments Deployment[]
+  experiments Experiment[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model ModelVersion {
+  id          String   @id @default(uuid())
+  modelId     String
+  version     String
+  sizeBytes   BigInt?
+  metrics     Json?
+  metadata    Json?
+  artifactUrl String?
+  createdAt   DateTime @default(now())
+
+  model        Model         @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  deployments  Deployment[]
+  trainingJobs TrainingJob[]
+
+  @@unique([modelId, version])
+  @@index([modelId])
+}
+
+model Experiment {
+  id           String   @id @default(uuid())
+  projectId    String
+  name         String
+  modelId      String?
+  datasetId    String?
+  parameters   Json?
+  metrics      Json?
+  codeRevision String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  model   Model?        @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  dataset Dataset?      @relation(fields: [datasetId], references: [id], onDelete: SetNull)
+  jobs    TrainingJob[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model ComputeProvider {
+  id          String              @id @default(uuid())
+  teamId      String
+  name        String
+  type        ComputeProviderType
+  status      ProviderStatus      @default(NOT_CONFIGURED)
+  providerKey String?
+  metadata    Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  team         Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  trainingJobs TrainingJob[]
+  deployments  Deployment[]
+  resources    ComputeResource[]
+
+  @@unique([teamId, name])
+  @@index([teamId])
+}
+
+model ComputeResource {
+  id         String   @id @default(uuid())
+  providerId String
+  name       String
+  cpu        Int?
+  ramMb      Int?
+  gpu        String?
+  storageGb  Int?
+  available  Boolean  @default(false)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  provider ComputeProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+}
+
+model TrainingJob {
+  id                String            @id @default(uuid())
+  projectId         String
+  experimentId      String?
+  modelVersionId    String?
+  datasetVersionId  String?
+  computeProviderId String?
+  name              String
+  status            TrainingJobStatus @default(QUEUED)
+  parameters        Json?
+  logsUrl           String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  errorMessage      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  experiment      Experiment?      @relation(fields: [experimentId], references: [id], onDelete: SetNull)
+  modelVersion    ModelVersion?    @relation(fields: [modelVersionId], references: [id], onDelete: SetNull)
+  datasetVersion  DatasetVersion?  @relation(fields: [datasetVersionId], references: [id], onDelete: SetNull)
+  computeProvider ComputeProvider? @relation(fields: [computeProviderId], references: [id], onDelete: SetNull)
+  metrics         TrainingMetric[]
+  artifacts       Artifact[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model TrainingMetric {
+  id            String   @id @default(uuid())
+  trainingJobId String
+  name          String
+  value         Float
+  step          Int?
+  recordedAt    DateTime @default(now())
+
+  trainingJob TrainingJob @relation(fields: [trainingJobId], references: [id], onDelete: Cascade)
+
+  @@index([trainingJobId])
+}
+
+model Deployment {
+  id                String           @id @default(uuid())
+  projectId         String
+  modelId           String
+  modelVersionId    String?
+  computeProviderId String?
+  name              String
+  mode              DeploymentMode
+  status            DeploymentStatus @default(UNAVAILABLE)
+  replicas          Int?
+  cpu               Int?
+  ramMb             Int?
+  gpu               String?
+  timeoutSeconds    Int?
+  maxRequests       Int?
+  autoscaling       Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  model           Model            @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  modelVersion    ModelVersion?    @relation(fields: [modelVersionId], references: [id], onDelete: SetNull)
+  computeProvider ComputeProvider? @relation(fields: [computeProviderId], references: [id], onDelete: SetNull)
+  endpoint        Endpoint?
+  usageRecords    UsageRecord[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([modelId])
+}
+
+model Endpoint {
+  id           String   @id @default(uuid())
+  deploymentId String   @unique
+  path         String   @unique
+  active       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  deployment Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+}
+
+model UsageRecord {
+  id           String   @id @default(uuid())
+  teamId       String
+  userId       String?
+  projectId    String?
+  deploymentId String?
+  metric       String
+  quantity     Decimal  @db.Decimal(20, 6)
+  unit         String
+  recordedAt   DateTime @default(now())
+
+  team       Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  project    Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  deployment Deployment? @relation(fields: [deploymentId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, recordedAt])
+  @@index([projectId])
+}
+
+model Secret {
+  id             String   @id @default(uuid())
+  teamId         String
+  projectId      String?
+  name           String
+  encryptedValue String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  team    Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@unique([teamId, name])
+  @@index([projectId])
+}
+
+model Integration {
+  id        String              @id @default(uuid())
+  teamId    String
+  projectId String?
+  provider  IntegrationProvider
+  status    IntegrationStatus   @default(NOT_CONFIGURED)
+  metadata  Json?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  team    Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@unique([teamId, provider])
+  @@index([projectId])
+}
+
+model Artifact {
+  id            String   @id @default(uuid())
+  projectId     String
+  trainingJobId String?
+  name          String
+  kind          String
+  uri           String
+  sizeBytes     BigInt?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  trainingJob TrainingJob? @relation(fields: [trainingJobId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([trainingJobId])
 }
