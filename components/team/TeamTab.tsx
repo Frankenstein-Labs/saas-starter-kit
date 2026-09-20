@@ -6,6 +6,7 @@ import {
   ShieldExclamationIcon,
   UserPlusIcon,
   BanknotesIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 import type { Team } from '@prisma/client';
 import classNames from 'classnames';
@@ -110,6 +111,15 @@ const TeamTab = ({ activeTab, team, heading, teamFeatures }: TeamTabProps) => {
       href: `/teams/${team.slug}/api-keys`,
       active: activeTab === 'api-keys',
       icon: KeyIcon,
+    });
+  }
+
+  if (canAccess('ai_integration', ['read', 'create', 'update', 'delete'])) {
+    navigations.push({
+      name: 'Integrations',
+      href: `/teams/${team.slug}/integrations`,
+      active: activeTab === 'integrations',
+      icon: LinkIcon,
     });
   }
 

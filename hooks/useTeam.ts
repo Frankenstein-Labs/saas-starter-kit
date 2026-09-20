@@ -15,7 +15,7 @@ const useTeam = (slug?: string) => {
   );
 
   return {
-    isLoading,
+    isLoading: !isReady || isLoading,
     isError: error,
     team: data?.data,
   };
