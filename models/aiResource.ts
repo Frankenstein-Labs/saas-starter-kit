@@ -6,6 +6,10 @@ import {
   NotebookStatus,
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import {
+  AiResourceUpdateInput,
+  pickAiResourceUpdateData,
+} from '@/lib/aiResourceSchemas';
 
 export type AiResource = 'workspaces' | 'notebooks' | 'models' | 'datasets';
 
@@ -152,36 +156,33 @@ export const updateAiResource = async (
   resource: AiResource,
   projectId: string,
   resourceId: string,
-  input: {
-    name?: string;
-    description?: string | null;
-    workspaceId?: string | null;
-    content?: Prisma.InputJsonValue;
-    framework?: string | null;
-    format?: string | null;
-    license?: string | null;
-  }
+  input: AiResourceUpdateInput
 ) => {
+  // The request schema is shared by every resource kind, but the underlying
+  // tables differ, so only forward the fields the target model actually owns.
   switch (resource) {
     case 'workspaces':
       return prisma.workspace.updateMany({
         where: { id: resourceId, projectId },
-        data: input,
+        data: pickAiResourceUpdateData('workspaces', input),
       });
     case 'notebooks':
       return prisma.notebook.updateMany({
         where: { id: resourceId, projectId },
-        data: input,
+        data: {
+          ...pickAiResourceUpdateData('notebooks', input),
+          content: input.content as Prisma.InputJsonValue | undefined,
+        },
       });
     case 'models':
       return prisma.model.updateMany({
         where: { id: resourceId, projectId },
-        data: input,
+        data: pickAiResourceUpdateData('models', input),
       });
     case 'datasets':
       return prisma.dataset.updateMany({
         where: { id: resourceId, projectId },
-        data: input,
+        data: pickAiResourceUpdateData('datasets', input),
       });
   }
 };
