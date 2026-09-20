@@ -146,10 +146,18 @@ model ApiKey {
   updatedAt  DateTime  @default(now())
   expiresAt  DateTime?
   lastUsedAt DateTime?
+  revokedAt  DateTime?
+  scopes     String[]  @default([])
+  projectId  String?
+  deploymentId String?
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deployment Deployment? @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
+  @@index([projectId])
+  @@index([deploymentId])
 }
 
 model Subscription {
@@ -335,6 +343,7 @@ model Project {
   usageRecords UsageRecord[]
   secrets      Secret[]
   integrations Integration[]
+  apiKeys      ApiKey[]
 
   @@unique([teamId, slug])
   @@index([teamId])
@@ -574,6 +583,7 @@ model Deployment {
   computeProvider ComputeProvider? @relation(fields: [computeProviderId], references: [id], onDelete: SetNull)
   endpoint        Endpoint?
   usageRecords    UsageRecord[]
+  apiKeys         ApiKey[]
 
   @@unique([projectId, name])
   @@index([projectId])

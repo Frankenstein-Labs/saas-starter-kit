@@ -4,6 +4,9 @@ import { createHash, randomBytes } from 'crypto';
 interface CreateApiKeyParams {
   name: string;
   teamId: string;
+  scopes?: string[];
+  projectId?: string;
+  deploymentId?: string;
 }
 
 const hashApiKey = (apiKey: string) => {
@@ -25,7 +28,10 @@ export const createApiKey = async (params: CreateApiKeyParams) => {
     data: {
       name,
       hashedKey: hashedKey,
-      team: { connect: { id: teamId } },
+      scopes: params.scopes ?? [],
+      teamId,
+      ...(params.projectId ? { projectId: params.projectId } : {}),
+      ...(params.deploymentId ? { deploymentId: params.deploymentId } : {}),
     },
   });
 
@@ -41,6 +47,12 @@ export const fetchApiKeys = async (teamId: string) => {
       id: true,
       name: true,
       createdAt: true,
+      expiresAt: true,
+      lastUsedAt: true,
+      revokedAt: true,
+      scopes: true,
+      projectId: true,
+      deploymentId: true,
     },
   });
 };
@@ -61,6 +73,12 @@ export const getApiKey = async (apiKey: string) => {
     select: {
       id: true,
       teamId: true,
+      hashedKey: true,
+      scopes: true,
+      projectId: true,
+      deploymentId: true,
+      expiresAt: true,
+      revokedAt: true,
     },
   });
 };
@@ -74,5 +92,12 @@ export const getApiKeyById = async (id: string) => {
       id: true,
       teamId: true,
     },
+  });
+};
+
+export const touchApiKey = async (id: string) => {
+  return prisma.apiKey.update({
+    where: { id },
+    data: { lastUsedAt: new Date() },
   });
 };
