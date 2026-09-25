@@ -343,6 +343,7 @@ model Project {
   usageRecords UsageRecord[]
   secrets      Secret[]
   integrations Integration[]
+  repositories ProjectRepository[]
   apiKeys      ApiKey[]
 
   @@unique([teamId, slug])
@@ -670,4 +671,20 @@ model Artifact {
 
   @@index([projectId])
   @@index([trainingJobId])
+}
+
+model ProjectRepository {
+  id             String              @id @default(uuid())
+  projectId      String
+  provider       IntegrationProvider @default(GITHUB)
+  repo           String
+  installationId String?
+  metadata       Json?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, provider, repo])
+  @@index([projectId])
 }
