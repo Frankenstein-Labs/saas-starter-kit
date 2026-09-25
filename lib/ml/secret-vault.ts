@@ -1,6 +1,12 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import { prisma as defaultPrisma } from '@/lib/prisma';
+import type { PrismaClient } from '@prisma/client';
 
-export type SecretScope = { teamId: string; ownerUserId?: string };
+export type SecretScope = {
+  teamId: string;
+  ownerUserId?: string;
+  projectId?: string;
+};
 export type SecretMetadata = {
   name: string;
   createdAt: Date;
@@ -52,6 +58,88 @@ export const decryptSecret = (encoded: string, key = keyFromEnv()) => {
 };
 
 type StoredSecret = SecretMetadata & { scope: SecretScope; ciphertext: string };
+
+export class PrismaSecretVault implements SecretVault {
+  private readonly db: PrismaClient;
+  private readonly key?: Buffer;
+
+  constructor(key?: Buffer, dbClient: PrismaClient = defaultPrisma) {
+    this.key = key;
+    this.db = dbClient;
+  }
+
+  async put(scope: SecretScope, name: string, value: string): Promise<SecretMetadata> {
+    const encryptedValue = encryptSecret(value, this.key as any);
+    const secret = await this.db.secret.upsert({
+      where: {
+        teamId_name: {
+          teamId: scope.teamId,
+          name,
+        },
+      },
+      update: {
+        encryptedValue,
+        projectId: scope.projectId ?? null,
+      },
+      create: {
+        teamId: scope.teamId,
+        projectId: scope.projectId ?? null,
+        name,
+        encryptedValue,
+      },
+    });
+
+    return {
+      name: secret.name,
+      createdAt: secret.createdAt,
+    };
+  }
+
+  async get(scope: SecretScope, name: string): Promise<string | null> {
+    const secret = await this.db.secret.findUnique({
+      where: {
+        teamId_name: {
+          teamId: scope.teamId,
+          name,
+        },
+      },
+    });
+
+    if (!secret) return null;
+    try {
+      return decryptSecret(secret.encryptedValue, this.key as any);
+    } catch {
+      return null;
+    }
+  }
+
+  async revoke(scope: SecretScope, name: string): Promise<void> {
+    await this.db.secret.deleteMany({
+      where: {
+        teamId: scope.teamId,
+        name,
+      },
+    });
+  }
+
+  async list(scope: SecretScope): Promise<SecretMetadata[]> {
+    const secrets = await this.db.secret.findMany({
+      where: {
+        teamId: scope.teamId,
+        ...(scope.projectId ? { projectId: scope.projectId } : {}),
+      },
+      select: {
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    return secrets.map((s) => ({
+      name: s.name,
+      createdAt: s.createdAt,
+    }));
+  }
+}
 
 export class InMemorySecretVault implements SecretVault {
   private readonly records = new Map<string, StoredSecret>();
