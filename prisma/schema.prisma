@@ -82,8 +82,87 @@ model Team {
   members         TeamMember[]
   invitations     Invitation[]
   apiKeys         ApiKey[]
+  projects        Project[]
+  integrations    Integration[]
+  secrets         Secret[]
+  artifacts       Artifact[]
 
   @@index([billingId])
+}
+
+model Project {
+  id           String              @id @default(uuid())
+  name         String
+  slug         String
+  teamId       String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @default(now()) @updatedAt
+  team         Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  repositories ProjectRepository[]
+  integrations Integration[]
+  secrets      Secret[]
+
+  @@unique([teamId, slug])
+}
+
+model ProjectRepository {
+  id            String   @id @default(uuid())
+  projectId     String
+  provider      String
+  repoName      String
+  repoUrl       String?
+  defaultBranch String   @default("main")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, provider, repoName])
+}
+
+model Integration {
+  id        String   @id @default(uuid())
+  teamId    String
+  provider  String
+  status    String   @default("NOT_CONFIGURED")
+  config    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  projectId String?
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  secrets   Secret[]
+
+  @@unique([teamId, provider])
+}
+
+model Secret {
+  id             String       @id @default(uuid())
+  name           String
+  teamId         String
+  encryptedValue String       @db.Text
+  iv             String
+  tag            String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  projectId      String?
+  integrationId String?
+  team           Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  integration    Integration? @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, name])
+}
+
+model Artifact {
+  id        String   @id @default(uuid())
+  teamId    String
+  name      String
+  type      String
+  url       String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 }
 
 model TeamMember {
