@@ -1,0 +1,43 @@
+
+> saas-starter-kit@1.6.0 dev
+> next dev --port 4002
+
+   ▲ Next.js 15.5.14
+   - Local:        http://localhost:4002
+   - Network:      http://192.168.0.2:4002
+   - Environments: .env
+   - Experiments (use with caution):
+     · clientTraceMetadata
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+[@sentry/nextjs] Could not find `onRequestError` hook in instrumentation file. This indicates outdated configuration of the Sentry SDK. Use `Sentry.captureRequestError` to instrument the `onRequestError` hook: https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#errors-from-nested-react-server-components
+[@sentry/nextjs] DEPRECATION WARNING: It is recommended renaming your `sentry.client.config.ts` file, or moving its content to `instrumentation-client.ts`. When using Turbopack `sentry.client.config.ts` will no longer work. Read more about the `instrumentation-client.ts` file: https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
+ ○ Compiling /instrumentation ...
+ ✓ Compiled /instrumentation in 6.6s (1447 modules)
+ ✓ Ready in 9.9s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 3.5s (1234 modules)
+ ○ Compiling /auth/login ...
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+🌼   daisyUI 4.12.24
+├─ ✔︎ 2 themes added		https://daisyui.com/docs/themes
+╰─ ★ Star daisyUI on GitHub	https://github.com/saadeghi/daisyui
+
+ ✓ Compiled /auth/login in 12s (2111 modules)
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 880ms (1286 modules)
+ GET /api/auth/csrf 200 in 2115ms
+ GET /auth/login?callbackUrl=http%3A%2F%2Flocalhost%3A4002%2Fteams%2Fmy-team%2Fintegrations 200 in 15383ms
+ GET /api/auth/session 200 in 14ms
+ GET /api/auth/session 200 in 10ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (139kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
