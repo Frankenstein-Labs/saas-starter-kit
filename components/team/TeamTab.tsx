@@ -6,6 +6,7 @@ import {
   ShieldExclamationIcon,
   UserPlusIcon,
   BanknotesIcon,
+  CpuChipIcon,
 } from '@heroicons/react/24/outline';
 import type { Team } from '@prisma/client';
 import classNames from 'classnames';
@@ -112,6 +113,13 @@ const TeamTab = ({ activeTab, team, heading, teamFeatures }: TeamTabProps) => {
       icon: KeyIcon,
     });
   }
+
+  navigations.push({
+    name: 'Integrations',
+    href: `/teams/${team.slug}/integrations`,
+    active: activeTab === 'integrations',
+    icon: CpuChipIcon,
+  });
 
   return (
     <div className="flex flex-col pb-6">
