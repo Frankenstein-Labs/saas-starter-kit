@@ -67,6 +67,7 @@ model User {
   accounts    Account[]
   sessions    Session[]
   invitations Invitation[]
+  secrets     Secret[]
 }
 
 model Team {
@@ -82,8 +83,81 @@ model Team {
   members         TeamMember[]
   invitations     Invitation[]
   apiKeys         ApiKey[]
+  integrations    Integration[]
+  secrets         Secret[]
+  projects        Project[]
 
   @@index([billingId])
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  NOT_CONFIGURED
+  UNVERIFIED
+}
+
+model Integration {
+  id        String            @id @default(uuid())
+  teamId    String
+  provider  String
+  status    IntegrationStatus @default(NOT_CONFIGURED)
+  config    Json?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now()) @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, provider])
+  @@index([teamId])
+}
+
+model Secret {
+  id             String   @id @default(uuid())
+  teamId         String
+  userId         String?
+  name           String
+  encryptedValue String   @db.Text
+  iv             String
+  tag            String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  team Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, name])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model Project {
+  id           String              @id @default(uuid())
+  teamId       String
+  name         String
+  description  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @default(now()) @updatedAt
+  team         Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  repositories ProjectRepository[]
+
+  @@index([teamId])
+}
+
+model ProjectRepository {
+  id        String   @id @default(uuid())
+  projectId String
+  repoId    String
+  repoName  String
+  provider  String   @default("github")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, repoId])
+  @@index([projectId])
 }
 
 model TeamMember {
